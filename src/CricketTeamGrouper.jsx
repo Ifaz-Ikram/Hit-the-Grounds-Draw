@@ -1,68 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Plus, Trash2, Shuffle, Zap, Sparkles } from 'lucide-react';
+import { organizationsData } from './data/organizationsData';
 
 const CricketTeamGrouper = () => {
-  const [teams, setTeams] = useState([]);
-  const [teamName, setTeamName] = useState('');
-  const [organization, setOrganization] = useState('');
-  const [organizations, setOrganizations] = useState({}); // Store org name -> ID mapping
+  const [organizations, setOrganizations] = useState({});
+  const [allTeams, setAllTeams] = useState([]); // all teams from data
   const [groups, setGroups] = useState(null);
   const [error, setError] = useState('');
   const [solving, setSolving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const addTeam = () => {
-    if (!teamName.trim() || !organization.trim()) {
-      setError('Please enter both team name and organization');
-      return;
-    }
-    if (teams.length >= 20) {
-      setError('Maximum 20 teams allowed');
-      return;
-    }
+  // Load organizations data on mount
+  useEffect(() => {
+    const orgsWithIds = {};
+    const teamsList = [];
     
-    const orgName = organization.trim();
-    const orgLower = orgName.toLowerCase();
-    
-    // Check if organization already exists (case-insensitive)
-    let orgId;
-    if (organizations[orgLower]) {
-      orgId = organizations[orgLower].id;
-    } else {
-      // Create new organization ID
-      orgId = `org_${Object.keys(organizations).length + 1}`;
-      setOrganizations({
-        ...organizations,
-        [orgLower]: { id: orgId, name: orgName }
+    Object.entries(organizationsData).forEach(([orgName, teams], index) => {
+      const orgId = `org_${index + 1}`;
+      orgsWithIds[orgName] = {
+        id: orgId,
+        name: orgName,
+        teams: teams
+      };
+      
+      // Flatten all teams with their organization info
+      teams.forEach(teamName => {
+        teamsList.push({
+          name: teamName,
+          org: orgName,
+          orgId: orgId
+        });
       });
-    }
-    
-    setTeams([...teams, { 
-      name: teamName.trim(), 
-      org: orgName,
-      orgId: orgId 
-    }]);
-    setTeamName('');
-    setOrganization('');
-    setError('');
-    setGroups(null);
-  };
-
-  const removeTeam = (index) => {
-    const updatedTeams = teams.filter((_, i) => i !== index);
-    setTeams(updatedTeams);
-    setGroups(null);
-    
-    // Clean up organizations that are no longer used
-    const usedOrgIds = new Set(updatedTeams.map(t => t.orgId));
-    const newOrgs = {};
-    Object.entries(organizations).forEach(([key, value]) => {
-      if (usedOrgIds.has(value.id)) {
-        newOrgs[key] = value;
-      }
     });
-    setOrganizations(newOrgs);
-  };
+    
+    setOrganizations(orgsWithIds);
+    setAllTeams(teamsList);
+  }, []);
 
   const isValidAssignment = (groups, teamIndex, groupIndex, teams) => {
     const team = teams[teamIndex];
@@ -101,8 +74,8 @@ const CricketTeamGrouper = () => {
   };
 
   const solveGrouping = () => {
-    if (teams.length !== 20) {
-      setError('Please add exactly 20 teams');
+    if (allTeams.length !== 20) {
+      setError(`You have ${allTeams.length} teams. Exactly 20 teams are required for grouping.`);
       return;
     }
 
@@ -112,7 +85,7 @@ const CricketTeamGrouper = () => {
 
     setTimeout(() => {
       const initialGroups = [[], [], [], []];
-      const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+      const shuffledTeams = [...allTeams].sort(() => Math.random() - 0.5);
       
       const success = backtrackCSP(shuffledTeams, initialGroups, 0);
       
@@ -121,7 +94,7 @@ const CricketTeamGrouper = () => {
         setShowSuccess(true);
         setError('');
       } else {
-        setError('Could not create valid groups with these organizations. Please try different team combinations.');
+        setError('Could not create valid groups with these organizations. Please try again.');
         setGroups(null);
       }
       
@@ -153,80 +126,48 @@ const CricketTeamGrouper = () => {
 
         {/* Main Card */}
         <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 shadow-2xl p-6 md:p-8 mb-6 hover:border-cyan-500/50 transition-all duration-300">
-          {/* Add Team Section */}
-          <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl p-6 mb-6 border border-green-500/30">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-white">Add Teams</h2>
-              <div className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-white font-bold text-sm">
-                {teams.length}/20
-              </div>
+          {/* Header with team counter */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-white">Participating Teams</h2>
+            <div className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full text-white font-bold text-sm">
+              {allTeams.length}/20
             </div>
-            
-            <div className="flex flex-col md:flex-row gap-3 mb-4">
-              <input
-                type="text"
-                placeholder="Team Name"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addTeam()}
-                className="flex-1 px-5 py-3 bg-slate-900/50 border border-green-500/50 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent backdrop-blur-sm transition-all"
-              />
-              <input
-                type="text"
-                placeholder="Organization"
-                value={organization}
-                onChange={(e) => setOrganization(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addTeam()}
-                className="flex-1 px-5 py-3 bg-slate-900/50 border border-emerald-500/50 rounded-xl text-white placeholder-gray-400 focus:ring-2 focus:ring-emerald-500 focus:border-transparent backdrop-blur-sm transition-all"
-              />
-              <button
-                onClick={addTeam}
-                className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-green-500/50 transition-all duration-300 flex items-center gap-2 justify-center hover:scale-105"
-              >
-                <Plus size={20} /> Add
-              </button>
-            </div>
-
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 text-red-300 backdrop-blur-sm animate-shake">
-                <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
-                <span className="font-medium">{error}</span>
-              </div>
-            )}
           </div>
 
-          {/* Teams List */}
-          {teams.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Sparkles size={20} className="text-green-400" />
-                Added Teams
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                {teams.map((team, index) => (
-                  <div
-                    key={index}
-                    className="group flex items-center justify-between bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-sm border border-green-500/30 rounded-xl p-4 hover:border-green-400 hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-105"
-                  >
-                    <div>
-                      <span className="font-semibold text-white block">{team.name}</span>
-                      <span className="text-sm text-green-300 font-mono">{team.org}</span>
-                      <span className="text-xs text-gray-500 font-mono block mt-1">ID: {team.orgId}</span>
-                    </div>
-                    <button
-                      onClick={() => removeTeam(index)}
-                      className="text-red-400 hover:text-red-300 transition opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+          {error && (
+            <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-start gap-3 text-red-300 backdrop-blur-sm animate-shake mb-6">
+              <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
-          {/* Solve Button */}
-          {teams.length === 20 && (
+          {/* Organizations and Teams - Display only (no clicking) */}
+          <div className="space-y-6 mb-6">
+            {Object.entries(organizations).map(([orgName, org]) => (
+              <div key={org.id} className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl p-6 border border-green-500/30">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white">{org.name}</h3>
+                  <div className="text-xs text-green-300 font-mono bg-white/10 px-3 py-1 rounded-full">
+                    {org.teams.length} teams
+                  </div>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {org.teams.map((teamName) => (
+                    <span
+                      key={teamName}
+                      className="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500/20 text-green-300 border border-green-500/40"
+                    >
+                      {teamName}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Draw Groups Button */}
+          {allTeams.length === 20 && (
             <button
               onClick={solveGrouping}
               disabled={solving}
@@ -236,6 +177,11 @@ const CricketTeamGrouper = () => {
               <Shuffle size={24} className={solving ? 'animate-spin' : ''} />
               <span className="relative z-10">{solving ? 'DRAWING GROUPS...' : 'DRAW GROUPS'}</span>
             </button>
+          )}
+          {allTeams.length !== 20 && (
+            <div className="text-center text-red-300 font-semibold py-4">
+              ⚠️ You have {allTeams.length} teams. Exactly 20 teams are required.
+            </div>
           )}
         </div>
 
