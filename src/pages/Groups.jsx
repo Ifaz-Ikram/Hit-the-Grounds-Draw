@@ -184,7 +184,7 @@ const Groups = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
             {groups.map((group, groupIndex) => {
               const colorScheme = groupColors[groupIndex];
-              const groupLetter = String.fromCharCode(65 + groupIndex);
+              const groupLabel = groupIndex + 1;
 
               return (
                 <div
@@ -198,7 +198,7 @@ const Groups = () => {
                     <div className="relative flex items-center justify-between z-10">
                       <div>
                         <p className="text-white/80 text-xs uppercase tracking-wider font-semibold mb-1">Group</p>
-                        <h3 className="text-4xl font-black text-white">{groupLetter}</h3>
+                        <h3 className="text-4xl font-black text-white">{groupLabel}</h3>
                       </div>
                       <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-md border border-white/30">
                         <Shield size={20} className="text-white" />
@@ -217,7 +217,7 @@ const Groups = () => {
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           {/* Rank/Number */}
                           <div className={`w-8 h-8 rounded-lg bg-white/10 text-white/70 font-bold flex items-center justify-center flex-shrink-0 text-sm`}>
-                            {teamIndex + 1}
+                            {String.fromCharCode(65 + teamIndex)}
                           </div>
 
                           {/* Logo */}
