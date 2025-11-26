@@ -92,17 +92,16 @@ const Groups = () => {
     "CSE": "/CSE.avif"
   };
 
-  const TeamCard = ({ team, index, isGroupView = false }) => (
+  const TeamCard = ({ team, index, isGroupView = false, delayIndex = 0 }) => (
     <motion.div
       layoutId={`team-${team.name}`}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
+      layout
       transition={{
-        type: "spring",
-        stiffness: 350,
-        damping: 25,
-        layout: { duration: 0.8 } // Slower layout transition for the "flying" effect
+        layout: {
+          type: "tween",
+          duration: 0.8,
+          ease: [0.4, 0.0, 0.2, 1]
+        }
       }}
       className={`flex items-center justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3 hover:bg-white/10 hover:border-white/10 transition-colors duration-200 group ${!isGroupView ? 'h-full' : ''}`}
     >
@@ -296,6 +295,7 @@ const Groups = () => {
                           team={team}
                           index={teamIndex}
                           isGroupView={true}
+                          delayIndex={groupIndex * 5 + teamIndex}
                         />
                       ))}
                     </div>
