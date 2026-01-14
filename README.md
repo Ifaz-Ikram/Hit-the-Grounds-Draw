@@ -3,7 +3,7 @@
 ![Hit The Grounds Banner](https://img.shields.io/badge/Hit%20The%20Grounds-2025-006666?style=for-the-badge&logo=cricket&labelColor=061a2f)
 
 > **The premier corporate cricket tournament draw generator.**  
-> *Balanced groups, seamless animations, and a premium experience*
+> *Balanced groups, seamless animations, and a premium experience.*
 
 ---
 
